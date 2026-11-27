@@ -237,7 +237,7 @@ def main() -> int:
     )
     print("  configured source directory and virtualenv")
 
-    wsgi_name = domain.replace(".", "_") + "_wsgi.py"
+    wsgi_name = domain.lower().replace(".", "_") + "_wsgi.py"
     wsgi_content = (
         "import sys\n"
         f'sys.path.insert(0, "/home/{username}/saraban/backend")\n'

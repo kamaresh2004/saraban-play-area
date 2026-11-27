@@ -11,12 +11,13 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from app.core.config import settings
 
 _connect_args: dict[str, object] = {}
+_journal_mode = os.environ.get("SQLITE_JOURNAL_MODE", "delete").strip().lower()
+
 if settings.is_sqlite:
     # FastAPI may touch the same SQLite file from worker threads.
-    # On PythonAnywhere's free tier the filesystem is networked; WAL can
-    # cause hangs, so default to "delete" journal mode.
-    _connect_args = {"check_same_thread": False, "timeout": 30,
-                     "journal_mode": os.environ.get("SQLITE_JOURNAL_MODE", "delete")}
+    # On networked filesystems (e.g. free-tier hosts) WAL can hang, so the
+    # default journal mode is "delete"; override with SQLITE_JOURNAL_MODE.
+    _connect_args = {"check_same_thread": False, "timeout": 30}
 
 engine = create_engine(
     settings.database_url,
@@ -25,7 +26,20 @@ engine = create_engine(
     future=True,
 )
 
-# No per-connection event listener needed — the mode is set at creation.
+
+if settings.is_sqlite:
+
+    @event.listens_for(engine, "connect")
+    def _apply_sqlite_pragmas(dbapi_connection, connection_record) -> None:  # noqa: ANN001
+        """Apply pragmas that sqlite3.connect() cannot accept as keyword args."""
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute("PRAGMA foreign_keys=ON")
+            if _journal_mode in {"delete", "truncate", "persist", "memory", "wal", "off"}:
+                cursor.execute(f"PRAGMA journal_mode={_journal_mode}")
+            cursor.execute("PRAGMA busy_timeout=30000")
+        finally:
+            cursor.close()
 
 
 SessionLocal = sessionmaker(
