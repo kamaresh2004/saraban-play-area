@@ -269,6 +269,10 @@ services:
 3. Wait for both builds to finish, then open the static site URL and sign in
    with the demo accounts.
 
+**⚠️ Render free tier quota exhausted** — new web services cannot be created
+until December 1, 2026. The frontend can be deployed to GitHub Pages or another
+static host as a fallback.
+
 Deployment notes:
 
 - `DEMO_SEED_ON_STARTUP=true` re-creates the demo dataset whenever the free
@@ -280,6 +284,45 @@ Deployment notes:
   minute. Data added during a session is lost when the service restarts. For a
   persistent deployment, attach a Render disk and point `DATABASE_URL` at it,
   or use a managed PostgreSQL database.
+
+## Live deployment
+
+The frontend is deployed to **GitHub Pages** at:
+
+<https://kamaresh2004.github.io/saraban-play-area/>
+
+The backend runs on **PythonAnywhere** (free US account) at:
+
+<https://Kamaresh1.pythonanywhere.com>
+
+API base: `https://Kamaresh1.pythonanywhere.com/api`
+
+Login credentials:
+
+| Username | Password | Role |
+| --- | --- | --- |
+| `admin` | `admin123` | Owner / admin |
+| `reception` | `reception123` | Reception staff |
+
+The frontend reads `VITE_API_URL` from its environment; it is set to the
+PythonAnywhere URL. If the backend is unavailable, the UI will show error
+states.
+
+Render deployment note: The free web-service creation API is blocked until
+December 1, 2026 ("free tier usage quota has been exhausted"). Static sites
+deploy to GitHub Pages or Render's free static hosting as a working alternative.
+
+## Backend on PythonAnywhere (free tier)
+
+The backend uses PythonAnywhere's free US account. SQLite `journal_mode` is
+set to `delete` (instead of `WAL`) to avoid hangs on the networked filesystem.
+The demo database is seeded with 17 children, 6 active visits, and 28 bills.
+
+## Printing
+
+The receipt page uses `@media print` with `@page { size: 80mm auto }`. Choose
+the 80 mm thermal printer, disable browser headers/footers, and print. Only the
+`.print-area` receipt is visible; buttons and page chrome are hidden.
 
 ## Printing
 
