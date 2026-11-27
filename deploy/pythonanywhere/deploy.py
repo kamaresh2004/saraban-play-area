@@ -20,11 +20,19 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import ssl
 import sys
 import time
 import uuid
 from pathlib import Path
 from urllib import error, parse, request
+
+try:
+    import certifi
+
+    SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
+except ImportError:  # pragma: no cover - certifi ships with most installs
+    SSL_CONTEXT = ssl.create_default_context()
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_HOST = "www.pythonanywhere.com"
@@ -39,7 +47,7 @@ def _request(
 ) -> tuple[int, bytes]:
     req = request.Request(url, data=data, headers=headers or {}, method=method)
     try:
-        with request.urlopen(req, timeout=120) as response:
+        with request.urlopen(req, timeout=120, context=SSL_CONTEXT) as response:
             return response.status, response.read()
     except error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
@@ -118,7 +126,7 @@ def _exists(host: str, username: str, token: str, path: str) -> bool:
         _request("GET", url, headers=_auth(token))
         return True
     except RuntimeError as exc:
-        if "HTTP 404" in str(exc):
+        if "HTTP 404" in str(exc) or "HTTP 400" in str(exc):
             return False
         raise
 
@@ -249,7 +257,7 @@ def main() -> int:
     health_url = f"https://{domain}/api/health"
     for attempt in range(1, 41):
         try:
-            with request.urlopen(health_url, timeout=25) as response:
+            with request.urlopen(health_url, timeout=25, context=SSL_CONTEXT) as response:
                 if response.status == 200:
                     print(f"  {health_url} -> {response.read().decode()}")
                     print("")
