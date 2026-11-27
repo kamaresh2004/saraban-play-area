@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Generator
 
 from sqlalchemy import create_engine, event
@@ -12,7 +13,10 @@ from app.core.config import settings
 _connect_args: dict[str, object] = {}
 if settings.is_sqlite:
     # FastAPI may touch the same SQLite file from worker threads.
-    _connect_args = {"check_same_thread": False, "timeout": 30}
+    # On PythonAnywhere's free tier the filesystem is networked; WAL can
+    # cause hangs, so default to "delete" journal mode.
+    _connect_args = {"check_same_thread": False, "timeout": 30,
+                     "journal_mode": os.environ.get("SQLITE_JOURNAL_MODE", "delete")}
 
 engine = create_engine(
     settings.database_url,
@@ -21,14 +25,7 @@ engine = create_engine(
     future=True,
 )
 
-if settings.is_sqlite:
-
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragmas(dbapi_connection, _connection_record) -> None:  # pragma: no cover
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.close()
+# No per-connection event listener needed — the mode is set at creation.
 
 
 SessionLocal = sessionmaker(
