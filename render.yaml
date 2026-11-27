@@ -1,0 +1,62 @@
+# Render Blueprint for the Saraban Play Area demo.
+#
+# Deploy both services from the repository root:
+#   Dashboard → New → Blueprint → connect this repository.
+#
+# Free-tier caveats (acceptable for a demo):
+#   * The web service sleeps after inactivity; the first request is slow.
+#   * SQLite lives on ephemeral storage, so the database is re-seeded with the
+#     demo dataset every time the service restarts.
+
+services:
+  # ---------------------------------------------------------------------------
+  # FastAPI + SQLite API
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: saraban-play-area-api
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEMO_SEED_ON_STARTUP
+        value: "true"
+      # The frontend URL is only known after the first deploy, so allow any
+      # Render-hosted origin in addition to the localhost list.
+      - key: CORS_ORIGIN_REGEX
+        value: 'https://.*\.onrender\.com'
+
+  # ---------------------------------------------------------------------------
+  # React + Vite static site
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: saraban-play-area
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      # Public URL of the API service above. The frontend appends /api.
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: saraban-play-area-api
+          envVarKey: RENDER_EXTERNAL_URL
+    routes:
+      # Client-side routing fallback (React Router).
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: "public, max-age=31536000, immutable"

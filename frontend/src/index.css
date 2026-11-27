@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-[#F4F8F9] font-sans text-ink antialiased;
+    background-image:
+      radial-gradient(1100px 500px at 110% -10%, rgba(28, 147, 160, 0.07), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(250, 196, 66, 0.07), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-ink;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(28, 32, 43, 0.18) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-ink/15;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-ink/[0.06] bg-white shadow-soft;
+  }
+
+  .label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted;
+  }
+
+  .input {
+    @apply h-12 w-full rounded-xl border border-ink/10 bg-white px-4 text-[15px] font-medium text-ink shadow-sm outline-none transition placeholder:font-normal placeholder:text-ink-faint focus:border-primary/60 focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-ink/[0.03];
+  }
+
+  .input-error {
+    @apply border-danger/50 focus:border-danger focus:ring-danger/10;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2;
+  }
+
+  .skeleton {
+    @apply animate-shimmer rounded-lg bg-[linear-gradient(90deg,rgba(28,32,43,0.05)_25%,rgba(28,32,43,0.09)_37%,rgba(28,32,43,0.05)_63%)] bg-[length:800px_100%];
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* 80 mm thermal receipt printing                                            */
+/* ------------------------------------------------------------------------- */
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 4mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body * {
+    visibility: hidden;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-area .print-divider {
+    border-top: 1px dashed #000 !important;
+  }
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-only {
+    display: block !important;
+  }
+}
